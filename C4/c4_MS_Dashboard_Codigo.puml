@@ -1,0 +1,119 @@
+@startuml C4_MS_Dashboard_Codigo
+hide methods
+hide circle
+skinparam classAttributeIconSize 0
+title C4 - Nivel 4 (Código) | MS Dashboard
+
+' ENUMS
+enum RolAcceso {
+  ESTUDIANTE
+  ADMIN
+}
+
+' DTOS
+class FiltroCitasDTO {
+  +estado: String
+  +fechaDesde: Date
+  +fechaHasta: Date
+}
+
+class CitaResumenDTO {
+  +citaId: String
+  +fechaHora: Date
+  +estado: String
+  +nombreUsuario: String
+  +resumenCaso: String
+}
+
+class CrearEstudianteDTO {
+  +usuarioId: String
+  +codigoEstudiante: String
+  +programa: String
+  +semestre: Int
+}
+
+' ENTIDADES (referencia lógica)
+class Usuario {
+  +id: String
+  +rol: RolAcceso
+  +activo: Boolean
+}
+
+class Estudiante {
+  +id: String
+  +usuarioId: String
+  +activoConsultorio: Boolean
+}
+
+class Cita {
+  +id: String
+  +fechaHora: Date
+  +estado: String
+}
+
+class CasoResumenIA {
+  +id: String
+  +resumen: String
+}
+
+' CONTROLADOR Y SEGURIDAD
+class DashboardController {
+  +listarCitas(token: String, filtro: FiltroCitasDTO)
+  +verDetalleCita(token: String, citaId: String)
+  +marcarAtendida(token: String, citaId: String)
+  +crearEstudiante(token: String, dto: CrearEstudianteDTO)
+}
+
+class GuardRoles {
+  +verificar(token: String, rolesPermitidos: RolAcceso): Usuario
+}
+
+' SERVICIOS
+class DashboardService {
+  +listarCitas(usuario: Usuario, filtro: FiltroCitasDTO)
+  +verDetalleCita(usuario: Usuario, citaId: String)
+  +marcarAtendida(usuario: Usuario, citaId: String)
+  +crearEstudiante(usuario: Usuario, dto: CrearEstudianteDTO)
+}
+
+class DashboardQueryService {
+  +buscarCitasAdmin(filtro: FiltroCitasDTO)
+  +buscarCitasEstudiante(estudianteId: String, filtro: FiltroCitasDTO)
+  +detalleCita(citaId: String)
+}
+
+' REPOSITORIOS
+class CitasRepository {
+  +findAdmin(filtro: FiltroCitasDTO)
+  +findByEstudiante(estudianteId: String, filtro: FiltroCitasDTO)
+  +updateEstado(citaId: String, estado: String)
+}
+
+class EstudiantesRepository {
+  +create(dto: CrearEstudianteDTO)
+  +findAll()
+  +findByUsuario(usuarioId: String)
+}
+
+class ResumenRepository {
+  +findByCita(citaId: String)
+}
+
+' RELACIONES
+DashboardController --> GuardRoles : verifica
+DashboardController --> DashboardService : delega
+
+DashboardService --> DashboardQueryService : usa
+DashboardService --> EstudiantesRepository : CRUD
+DashboardService --> CitasRepository : actualizar
+
+DashboardQueryService --> CitasRepository : consulta
+DashboardQueryService --> ResumenRepository : obtiene resumen IA
+
+note right of GuardRoles
+Reglas de acceso:
+- ADMIN: ve todo y gestiona estudiantes
+- ESTUDIANTE: solo ve sus citas asignadas
+end note
+
+@enduml

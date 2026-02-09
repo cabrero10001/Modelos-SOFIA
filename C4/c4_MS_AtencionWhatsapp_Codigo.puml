@@ -1,0 +1,125 @@
+@startuml C4_MS_AtencionWhatsApp_Codigo
+hide methods
+skinparam classAttributeIconSize 0
+title C4 - Nivel 4 (Código) | MS Atención WhatsApp
+
+' ENUMS
+enum CanalChat {
+  WHATSAPP
+}
+
+enum EstadoSesionChat {
+  ABIERTA
+  CERRADA
+}
+
+enum DireccionMensaje {
+  ENTRANTE
+  SALIENTE
+}
+
+enum RolMensaje {
+  USUARIO
+  ASISTENTE
+  SISTEMA
+}
+
+' DTOS
+class EventoWhatsAppDTO {
+  +provider: String
+  +payload: Map
+}
+
+class MensajeNormalizadoDTO {
+  +telefono: String
+  +texto: String
+  +media: Map
+  +providerMessageId: String
+  +timestamp: Date
+}
+
+class RespuestaCanalDTO {
+  +telefono: String
+  +texto: String
+  +metadata: Map
+}
+
+' ENTIDADES
+class ChatSesion {
+  +id: String
+  +canal: CanalChat
+  +telefono: String
+  +estado: EstadoSesionChat
+  +contexto: Map
+  +metadata: Map
+  +iniciadaEn: Date
+  +cerradaEn: Date
+}
+
+class ChatMensaje {
+  +id: String
+  +sesionId: String
+  +direccion: DireccionMensaje
+  +rol: RolMensaje
+  +contenido: String
+  +payload: Map
+  +creadoEn: Date
+}
+
+ChatSesion "1" -- "0..*" ChatMensaje : contiene >
+
+' CONTROLADOR
+class WhatsAppController {
+  +recibirEvento(dto: EventoWhatsAppDTO)
+}
+
+' SERVICIOS
+class NormalizadorWhatsApp {
+  +normalizar(dto: EventoWhatsAppDTO): MensajeNormalizadoDTO
+}
+
+class ConversacionService {
+  +procesarMensaje(msg: MensajeNormalizadoDTO): RespuestaCanalDTO
+  -obtenerOSesion(telefono: String): ChatSesion
+  -actualizarContexto(sesionId: String, contexto: Map)
+}
+
+class RouterIntenciones {
+  +resolverIntencion(sesion: ChatSesion, msg: MensajeNormalizadoDTO): String
+}
+
+class ChatRepository {
+  +buscarSesion(telefono: String): ChatSesion
+  +crearSesion(telefono: String): ChatSesion
+  +guardarMensaje(sesionId: String, rol: RolMensaje, contenido: String)
+  +cerrarSesion(sesionId: String)
+}
+
+class IAClient {
+  +generarRespuesta(contexto: Map, texto: String): String
+}
+
+class CitasClient {
+  +crearCitaDesdeChat(datos: Map)
+}
+
+class EncuestasClient {
+  +registrarEncuesta(datos: Map)
+}
+
+class WhatsAppSender {
+  +enviar(respuesta: RespuestaCanalDTO)
+}
+
+' RELACIONES
+WhatsAppController --> NormalizadorWhatsApp
+WhatsAppController --> ConversacionService
+
+ConversacionService --> ChatRepository
+ConversacionService --> RouterIntenciones
+ConversacionService --> IAClient
+ConversacionService --> CitasClient
+ConversacionService --> EncuestasClient
+ConversacionService --> WhatsAppSender
+
+@enduml

@@ -1,0 +1,22 @@
+@startuml C1_Contexto_SOFIA
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
+
+title C1 - Contexto del Sistema (SOFIA / SOF-IA)
+
+Person(usuario, "Usuario", "Realiza consultas jurídicas mediante chat, agenda citas y responde encuestas.")
+Person(estudianteJ, "Estudiante Jurídico", "Estudiante del consultorio que atiende citas y consulta el resumen del caso.")
+Person(admin, "Administrador del Consultorio", "Gestiona estudiantes, supervisa el consultorio y accede al dashboard.")
+
+System(sofia, "SOFIA / SOF-IA", "Plataforma web de orientación jurídica con chat asistido por IA en el aplicativo Whatsapp, gestión de citas y dashboard administrativo.")
+
+System_Ext(llm, "Proveedor de IA (LLM)", "Servicio externo de IA para generación de respuestas y resúmenes.")
+System_Ext(email, "Servicio de Notificaciones", "Envío de correos o avisos del sistema (opcional).")
+
+Rel(usuario, sofia, "Realiza consultas y agenda citas", "HTTPS")
+Rel(estudianteJ, sofia, "Gestiona y atiende citas asignadas", "HTTPS")
+Rel(admin, sofia, "Administra estudiantes y consultorio (Dashboard)", "HTTPS")
+
+Rel(sofia, llm, "Solicita respuestas y resúmenes", "API HTTPS")
+Rel(sofia, email, "Envía notificaciones", "SMTP / API")
+
+@enduml

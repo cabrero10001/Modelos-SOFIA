@@ -1,0 +1,21 @@
+@startuml C3_MS_Gestion_Estudiantes
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+title C3 - Componentes | MS Gestión de Estudiantes
+
+Container(api, "API Gateway / BFF", "Node.js", "Entrada única")
+ContainerDb(pg, "BD Central", "PostgreSQL", "Estudiantes (perfil)")
+
+Container_Boundary(ms, "MS Gestión de Estudiantes") {
+  Component(ctrl, "EstudiantesController", "REST", "CRUD estudiantes (solo admin)")
+  Component(guard, "GuardAdmin", "Middleware", "Verifica rol ADMIN")
+  Component(svc, "EstudiantesService", "Service", "Reglas de creación/actualización/desactivación")
+  Component(repo, "EstudiantesRepository", "Repository", "Persistencia (Prisma)")
+}
+
+Rel(api, ctrl, "Invoca", "HTTP")
+Rel(ctrl, guard, "Valida", "")
+Rel(ctrl, svc, "Usa", "")
+Rel(svc, repo, "Usa", "")
+Rel(repo, pg, "Lee/Escribe", "SQL")
+
+@enduml

@@ -1,0 +1,171 @@
+@startuml SOFIA_Modelo_Datos_Postgres_JSONB
+hide methods
+skinparam classAttributeIconSize 0
+
+' =====================
+' ENUMS
+' =====================
+enum RolAcceso {
+  ESTUDIANTE
+  ADMIN
+}
+
+enum CanalChat {
+  WHATSAPP
+}
+
+enum EstadoSesionChat {
+  ABIERTA
+  CERRADA
+}
+
+enum DireccionMensaje {
+  ENTRANTE
+  SALIENTE
+}
+
+enum RolMensaje {
+  USUARIO
+  ASISTENTE
+  SISTEMA
+}
+
+enum EstadoCita {
+  PENDIENTE
+  ATENDIDA
+  CANCELADA
+}
+
+' =====================
+' ENTIDADES
+' =====================
+
+class Usuario {
+  +id: UUID
+  +nombreCompleto: String
+  +correo: String?
+  +telefono: String
+  +passwordHash: String?
+  +rolAcceso: RolAcceso
+  +activo: Boolean
+  +creadoEn: DateTime
+  +actualizadoEn: DateTime
+}
+
+class Estudiante {
+  +id: UUID
+  +usuarioId: UUID
+  +codigoEstudiante: String?
+  +programa: String?
+  +semestre: Int?
+  +activoConsultorio: Boolean
+  +creadoEn: DateTime
+  +actualizadoEn: DateTime
+}
+
+class Consentimiento {
+  +id: UUID
+  +usuarioId: UUID
+  +versionPolitica: String
+  +aceptadoEn: DateTime
+  +ip: String?
+  +userAgent: String?
+}
+
+class ChatSesion {
+  +id: UUID
+  +usuarioId: UUID?
+  +canal: CanalChat
+  +telefono: String
+  +estado: EstadoSesionChat
+  +contexto: JSONB
+  +metadata: JSONB
+  +iniciadaEn: DateTime
+  +cerradaEn: DateTime?
+}
+
+class ChatMensaje {
+  +id: UUID
+  +sesionId: UUID
+  +direccion: DireccionMensaje
+  +rol: RolMensaje
+  +contenido: String?
+  +payload: JSONB
+  +creadoEn: DateTime
+}
+
+class CasoResumenIA {
+  +id: UUID
+  +sesionId: UUID?
+  +citaId: UUID?
+  +usuarioId: UUID?
+  +resumen: String
+  +temaDetectado: String?
+  +metadatos: JSONB
+  +creadoEn: DateTime
+}
+
+class Cita {
+  +id: UUID
+  +usuarioId: UUID
+  +estudianteId: UUID?
+  +fechaHora: DateTime
+  +estado: EstadoCita
+  +motivo: String?
+  +atendidaEn: DateTime?
+  +canceladaEn: DateTime?
+  +razonCancelacion: String?
+  +creadoEn: DateTime
+  +actualizadoEn: DateTime
+}
+
+class EncuestaSatisfaccion {
+  +id: UUID
+  +usuarioId: UUID
+  +citaId: UUID?
+  +calificacion: Int
+  +comentario: String?
+  +creadoEn: DateTime
+}
+
+class NormativaFuente {
+  +id: UUID
+  +nombre: String
+  +tipo: String?
+  +url: String?
+  +activa: Boolean
+  +creadoEn: DateTime
+  +actualizadoEn: DateTime
+}
+
+class NormativaDocumento {
+  +id: UUID
+  +fuenteId: UUID
+  +titulo: String
+  +version: String?
+  +contenido: String?
+  +metadata: JSONB
+  +publicadoEn: DateTime?
+  +creadoEn: DateTime
+  +actualizadoEn: DateTime
+}
+
+' =====================
+' RELACIONES
+' =====================
+
+Usuario "1" -- "0..1" Estudiante : perfil_estudiante >
+Usuario "1" -- "0..*" Consentimiento : acepta >
+Usuario "1" -- "0..*" ChatSesion : inicia >
+ChatSesion "1" -- "0..*" ChatMensaje : contiene >
+Usuario "1" -- "0..*" Cita : agenda >
+Estudiante "0..1" -- "0..*" Cita : atiende/asignada >
+Usuario "1" -- "0..*" EncuestaSatisfaccion : responde >
+Cita "0..1" -- "0..*" EncuestaSatisfaccion : sobre >
+
+ChatSesion "0..1" -- "0..*" CasoResumenIA : genera >
+Cita "0..1" -- "0..*" CasoResumenIA : resumen_para >
+
+NormativaFuente "1" -- "0..*" NormativaDocumento : publica >
+
+@enduml

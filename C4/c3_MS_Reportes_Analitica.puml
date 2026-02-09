@@ -1,0 +1,19 @@
+@startuml C3_MS_Reportes
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+title C3 - Componentes | MS Reportes y Analítica
+
+Container(api, "API Gateway / BFF", "Node.js", "Entrada única")
+ContainerDb(pg, "BD Central", "PostgreSQL", "Lecturas agregadas para métricas")
+
+Container_Boundary(ms, "MS Reportes y Analítica") {
+  Component(ctrl, "ReportesController", "REST", "KPIs y estadísticas")
+  Component(svc, "ReportesService", "Service", "Agregaciones y métricas")
+  Component(repo, "ReportesRepository", "Repository", "Consultas agregadas (Prisma/SQL)")
+}
+
+Rel(api, ctrl, "Invoca", "HTTP")
+Rel(ctrl, svc, "Usa", "")
+Rel(svc, repo, "Usa", "")
+Rel(repo, pg, "Lee", "SQL")
+
+@enduml

@@ -1,0 +1,70 @@
+@startuml C2_Contenedores_SOFIA_WhatsApp_Postgres
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+title C2 - Contenedores (SOFIA) - WhatsApp + Dashboard (PostgreSQL único + JSONB)
+
+Person(usuario, "Usuario", "Interactúa con SOFIA únicamente por WhatsApp para orientación jurídica.")
+Person(estudianteJ, "Estudiante Jurídico", "Usa el dashboard para ver/gestionar citas y revisar resúmenes.")
+Person(admin, "Administrador del Consultorio", "Usa el dashboard para administrar estudiantes y supervisar operación.")
+
+System_Boundary(s1, "SOFIA / SOF-IA") {
+
+  Container(dashboard, "Dashboard Web", "React + TypeScript", "Panel web (solo estudiante y admin) para gestión de citas/estudiantes y consulta de resúmenes.")
+  Container(api, "API Gateway / BFF", "Node.js (Express/Nest)", "Entrada única; auth/roles; ruteo a microservicios; API para dashboard y canal WhatsApp.")
+  Container(waWebhook, "Webhook WhatsApp", "Node.js", "Recibe eventos del proveedor WhatsApp y los normaliza.")
+
+  Container(msIdentidad, "MS Identidad y Acceso", "Node.js", "Usuarios, roles (ADMIN/ESTUDIANTE), autenticación JWT.")
+  Container(msEstudiantes, "MS Gestión de Estudiantes", "Node.js", "CRUD de estudiantes (solo admin).")
+  Container(msCitas, "MS Citas y Agenda", "Node.js", "Agendar, cancelar, estados y asignación a estudiante.")
+  Container(msAtencion, "MS Atención WhatsApp", "Node.js", "Orquesta conversación por WhatsApp, guarda sesiones/mensajes y dispara acciones de negocio.")
+  Container(msIA, "MS IA / Orquestación", "Node.js", "Prompting, reglas, genera respuestas/resúmenes con LLM.")
+  Container(msNorma, "MS Normativa", "Node.js", "Marco legal vigente (fuentes, versiones, búsqueda).")
+  Container(msEncuestas, "MS Encuestas", "Node.js", "Registro de calificación y encuesta posterior.")
+  Container(msReportes, "MS Reportes/Analítica", "Node.js", "Métricas y reportes de uso/atenciones/citas.")
+
+  ContainerDb(pg, "BD Central", "PostgreSQL", "Única BD. Incluye chat en JSONB, usuarios, estudiantes, citas, encuestas, normativa y resúmenes.")
+  Container(cache, "Cache", "Redis", "Rate limiting, sesiones temporales (opcional).")
+  ContainerQueue(bus, "Cola / Bus", "Bull/RabbitMQ", "Tareas asíncronas (recordatorios, analítica) (opcional).")
+}
+
+System_Ext(waProvider, "Proveedor WhatsApp (Meta/Twilio)", "Entrega/recepción de mensajes WhatsApp.")
+System_Ext(llm, "Proveedor de IA (LLM)", "API externa para respuestas y resúmenes.")
+System_Ext(email, "Servicio de Notificaciones", "Envío de correos/avisos (opcional).")
+
+Rel(usuario, waProvider, "Envía/recibe mensajes", "WhatsApp")
+Rel(waProvider, waWebhook, "Eventos entrantes (webhook)", "HTTPS")
+Rel(waWebhook, api, "Entrega eventos normalizados", "HTTP/JSON")
+
+Rel(estudianteJ, dashboard, "Usa", "HTTPS")
+Rel(admin, dashboard, "Usa", "HTTPS")
+Rel(dashboard, api, "Consume API", "HTTPS/JSON")
+
+Rel(api, msIdentidad, "Auth/Autorización", "HTTP")
+Rel(api, msEstudiantes, "CRUD estudiantes", "HTTP")
+Rel(api, msCitas, "Citas y agenda", "HTTP")
+Rel(api, msAtencion, "Atención por WhatsApp", "HTTP")
+Rel(api, msIA, "Orquestación IA", "HTTP")
+Rel(api, msNorma, "Normativa", "HTTP")
+Rel(api, msEncuestas, "Encuestas", "HTTP")
+Rel(api, msReportes, "Reportes", "HTTP")
+
+Rel(msAtencion, msIA, "Solicita respuesta IA / resumen", "HTTP")
+Rel(msIA, llm, "Solicita respuesta/resumen", "HTTPS API")
+Rel(msIA, msNorma, "Consulta marco legal", "HTTP")
+Rel(msAtencion, waProvider, "Envía respuesta", "HTTPS API")
+
+Rel(msIdentidad, pg, "Lee/Escribe", "SQL")
+Rel(msEstudiantes, pg, "Lee/Escribe", "SQL")
+Rel(msCitas, pg, "Lee/Escribe", "SQL")
+Rel(msAtencion, pg, "Lee/Escribe (chat JSONB)", "SQL")
+Rel(msIA, pg, "Lee/Escribe (resúmenes/casos)", "SQL")
+Rel(msNorma, pg, "Lee/Escribe", "SQL")
+Rel(msEncuestas, pg, "Lee/Escribe", "SQL")
+Rel(msReportes, pg, "Lee", "SQL")
+
+Rel(api, cache, "Usa", "TCP")
+Rel(api, bus, "Publica eventos/tareas", "")
+Rel(msReportes, bus, "Consume eventos", "")
+Rel(api, email, "Notificaciones (opcional)", "SMTP/API")
+
+@enduml

@@ -1,0 +1,21 @@
+@startuml C3_MS_Normativa
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+title C3 - Componentes | MS Normativa
+
+Container(api, "API Gateway / BFF", "Node.js", "Entrada única")
+ContainerDb(pg, "BD Central", "PostgreSQL", "NormativaFuente/NormativaDocumento")
+
+Container_Boundary(ms, "MS Normativa") {
+  Component(ctrl, "NormativaController", "REST", "Búsqueda/consulta normativa")
+  Component(svc, "NormativaService", "Service", "Reglas de versionado y vigencia")
+  Component(repo, "NormativaRepository", "Repository", "Persistencia (Prisma)")
+  Component(index, "NormalizadorContenido", "Component", "Estructura/limpieza de contenido (opcional)")
+}
+
+Rel(api, ctrl, "Invoca", "HTTP")
+Rel(ctrl, svc, "Usa", "")
+Rel(svc, repo, "Usa", "")
+Rel(svc, index, "Usa", "")
+Rel(repo, pg, "Lee/Escribe", "SQL")
+
+@enduml

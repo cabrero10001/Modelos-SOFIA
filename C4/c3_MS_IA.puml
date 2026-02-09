@@ -1,0 +1,27 @@
+@startuml C3_MS_IA
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+title C3 - Componentes | MS IA / Orquestación
+
+Container(api, "API Gateway / BFF", "Node.js", "Entrada única")
+System_Ext(llm, "Proveedor de IA (LLM)", "API externa")
+Container(msNorma, "MS Normativa", "Node.js", "Marco legal vigente")
+ContainerDb(pg, "BD Central", "PostgreSQL", "CasoResumenIA, trazabilidad")
+
+Container_Boundary(ms, "MS IA / Orquestación") {
+  Component(ctrl, "IAController", "REST", "Recibe consultas desde MS Atención")
+  Component(svc, "IAService", "Service", "Construcción de prompt y reglas")
+  Component(policy, "ReglasSeguridadIA", "Component", "Límites y filtros de respuesta")
+  Component(client, "LLMClient", "HTTP Client", "Llamadas al proveedor IA")
+  Component(repo, "ResumenRepository", "Repository", "Guarda resumen IA (Prisma)")
+}
+
+Rel(api, ctrl, "Invoca", "HTTP")
+Rel(ctrl, svc, "Usa", "")
+Rel(svc, policy, "Aplica", "")
+Rel(svc, msNorma, "Consulta normativa", "HTTP")
+Rel(svc, client, "Usa", "")
+Rel(client, llm, "Solicita respuesta/resumen", "HTTPS API")
+Rel(svc, repo, "Usa", "")
+Rel(repo, pg, "Lee/Escribe", "SQL")
+
+@enduml

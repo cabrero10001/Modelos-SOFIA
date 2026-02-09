@@ -1,0 +1,38 @@
+@startuml C3_MS_Atencion_WhatsApp
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+title C3 - Componentes | MS Atención WhatsApp
+
+Container(api, "API Gateway / BFF", "Node.js", "Entrada única")
+Container(waWebhook, "Webhook WhatsApp", "Node.js", "Recibe eventos del proveedor WhatsApp")
+System_Ext(waProvider, "Proveedor WhatsApp (Meta/Twilio)", "Mensajería WhatsApp")
+
+Container(msIA, "MS IA / Orquestación", "Node.js", "Generación de respuestas/resúmenes")
+Container(msCitas, "MS Citas y Agenda", "Node.js", "Creación/consulta de citas")
+Container(msEncuestas, "MS Encuestas", "Node.js", "Registro de encuesta")
+ContainerDb(pg, "BD Central", "PostgreSQL", "ChatSesion/ChatMensaje (JSONB)")
+
+Container_Boundary(ms, "MS Atención WhatsApp") {
+  Component(ctrl, "WhatsAppController", "REST/Webhook Handler", "Procesa eventos normalizados")
+  Component(parser, "NormalizadorWhatsApp", "Component", "Convierte payload a formato interno")
+  Component(svc, "ConversacionService", "Service", "Estado conversacional y flujo")
+  Component(repo, "ChatRepository", "Repository", "Sesiones y mensajes (Prisma + JSONB)")
+  Component(router, "RouterIntenciones", "Component", "Decide: IA / Cita / Encuesta")
+  Component(sender, "WhatsAppSender", "HTTP Client", "Envía mensajes al proveedor")
+}
+
+Rel(waProvider, waWebhook, "Entrega eventos", "HTTPS")
+Rel(waWebhook, api, "Entrega eventos normalizados", "HTTP")
+Rel(api, ctrl, "Invoca", "HTTP")
+
+Rel(ctrl, parser, "Usa", "")
+Rel(ctrl, svc, "Usa", "")
+Rel(svc, router, "Usa", "")
+Rel(svc, repo, "Lee/Escribe", "")
+Rel(repo, pg, "Lee/Escribe", "SQL")
+
+Rel(router, msIA, "Consulta IA", "HTTP")
+Rel(router, msCitas, "Agendar/consultar cita", "HTTP")
+Rel(router, msEncuestas, "Registrar encuesta", "HTTP")
+Rel(sender, waProvider, "Envía respuesta", "HTTPS API")
+
+@enduml

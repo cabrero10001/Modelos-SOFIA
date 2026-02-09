@@ -1,0 +1,24 @@
+@startuml C3_MS_Identidad_Acceso
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+title C3 - Componentes | MS Identidad y Acceso
+
+Container(api, "API Gateway / BFF", "Node.js", "Entrada única para dashboard y WhatsApp")
+ContainerDb(pg, "BD Central", "PostgreSQL", "Usuarios, roles, estado")
+
+Container_Boundary(ms, "MS Identidad y Acceso") {
+  Component(ctrl, "AuthController", "REST", "Login, refresh, perfil")
+  Component(guard, "GuardAutorizacion", "Middleware", "Valida JWT y permisos (ADMIN/ESTUDIANTE)")
+  Component(svc, "AuthService", "Service", "Emisión/validación de tokens")
+  Component(userSvc, "UsuarioService", "Service", "Gestión de usuarios y roles")
+  Component(repo, "UsuarioRepository", "Repository", "Persistencia (Prisma)")
+}
+
+Rel(api, ctrl, "Invoca", "HTTP")
+Rel(ctrl, guard, "Usa", "")
+Rel(ctrl, svc, "Usa", "")
+Rel(ctrl, userSvc, "Usa", "")
+Rel(svc, repo, "Usa", "")
+Rel(userSvc, repo, "Usa", "")
+Rel(repo, pg, "Lee/Escribe", "SQL")
+
+@enduml

@@ -1,0 +1,32 @@
+@startuml C3_MS_Dashboard
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+title C3 - Componentes | MS Dashboard
+
+Container(api, "API Gateway / BFF", "Node.js", "Entrada única")
+ContainerDb(pg, "BD Central", "PostgreSQL", "Consulta de citas, resúmenes y estudiantes")
+Container(msIdentidad, "MS Identidad y Acceso", "Node.js", "Roles/permisos")
+Container(msCitas, "MS Citas y Agenda", "Node.js", "Citas")
+Container(msEstudiantes, "MS Gestión de Estudiantes", "Node.js", "Estudiantes")
+Container(msIA, "MS IA / Orquestación", "Node.js", "Resúmenes IA")
+
+Container_Boundary(ms, "MS Dashboard") {
+  Component(ctrl, "DashboardController", "REST", "Vistas: estudiante/admin")
+  Component(guard, "GuardRoles", "Middleware", "Permisos según rol")
+  Component(svc, "DashboardService", "Service", "Casos de uso del dashboard")
+  Component(query, "DashboardQueryService", "Service", "Consultas/joins optimizados")
+  Component(repo, "DashboardRepository", "Repository", "Acceso a datos (Prisma)")
+}
+
+Rel(api, ctrl, "Invoca", "HTTP")
+Rel(ctrl, guard, "Valida", "")
+Rel(ctrl, svc, "Usa", "")
+Rel(svc, query, "Usa", "")
+Rel(query, repo, "Usa", "")
+Rel(repo, pg, "Lee", "SQL")
+
+Rel(svc, msIdentidad, "Valida permisos", "HTTP")
+Rel(svc, msCitas, "Obtiene citas", "HTTP")
+Rel(svc, msEstudiantes, "Gestiona estudiantes (admin)", "HTTP")
+Rel(svc, msIA, "Obtiene resúmenes", "HTTP")
+
+@enduml

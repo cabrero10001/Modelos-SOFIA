@@ -1,0 +1,21 @@
+@startuml C3_MS_Citas_Agenda
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+title C3 - Componentes | MS Citas y Agenda
+
+Container(api, "API Gateway / BFF", "Node.js", "Entrada única")
+ContainerDb(pg, "BD Central", "PostgreSQL", "Citas y asignación a estudiante")
+
+Container_Boundary(ms, "MS Citas y Agenda") {
+  Component(ctrl, "CitasController", "REST", "Agendar, cancelar, listar")
+  Component(svc, "CitasService", "Service", "Reglas de disponibilidad y estado")
+  Component(policy, "ValidadorCitas", "Component", "Evita conflictos y valida fechas")
+  Component(repo, "CitasRepository", "Repository", "Persistencia (Prisma)")
+}
+
+Rel(api, ctrl, "Invoca", "HTTP")
+Rel(ctrl, svc, "Usa", "")
+Rel(svc, policy, "Usa", "")
+Rel(svc, repo, "Usa", "")
+Rel(repo, pg, "Lee/Escribe", "SQL")
+
+@enduml
